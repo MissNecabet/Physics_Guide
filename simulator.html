@@ -850,7 +850,7 @@ function initJFET() {
       responsive: true, maintainAspectRatio: false, animation: {duration: 100},
       plugins: {legend: {display: false}},
       scales: {
-        x: {title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}},
+        x: {type:'linear', title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:-4, max:0},
         y: {title: {display: true, text: 'I_D (mA)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
       }
     }
@@ -924,7 +924,7 @@ function initMOSFET() {
       responsive: true, maintainAspectRatio: false, animation: {duration: 100},
       plugins: {legend: {display: false}},
       scales: {
-        x: {title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}},
+        x: {type:'linear', title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0, max:12},
         y: {title: {display: true, text: 'I_D (mA)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
       }
     }
@@ -985,7 +985,7 @@ function initVDiv() {
       responsive: true, maintainAspectRatio: false, animation: {duration: 100},
       plugins: {legend: {display: false}},
       scales: {
-        x: {title: {display: true, text: 'R2 (kΩ)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}},
+        x: {type:'linear', title: {display: true, text: 'R2 (kΩ)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0, max:20},
         y: {title: {display: true, text: 'V_out (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
       }
     }
@@ -1125,7 +1125,7 @@ function initCap() {
       responsive: true, maintainAspectRatio: false, animation: {duration: 80},
       plugins: {legend: {display: false}},
       scales: {
-        x: {title: {display: true, text: 'Time (s)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}},
+        x: {type:'linear', title: {display: true, text: 'Time (s)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0},
         y: {title: {display: true, text: 'V_C (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
       }
     }
