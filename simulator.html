@@ -792,426 +792,444 @@ footer p{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)}
 </footer>
 
 <script>
-// ===== CHART DEFAULTS =====
-Chart.defaults.color = '#7e7d90';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
-Chart.defaults.font.family = "'DM Mono', monospace";
-Chart.defaults.font.size = 10;
+// ===== DEFAULTS =====
+Chart.defaults.color='#7e7d90';
+Chart.defaults.borderColor='rgba(255,255,255,0.07)';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=10;
 
-// ===== PANEL SWITCH — lazy init =====
-const initialized = {};
-function showPanel(id, btn) {
-  document.querySelectorAll('.sim-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
+// ===== HELPERS =====
+function mkChart(id, cfg){ return new Chart(document.getElementById(id), cfg); }
+
+function lineDS(color, fill){
+  return {borderColor:color, borderWidth:2, pointRadius:0, tension:0.3,
+    backgroundColor: fill||'transparent', fill:!!fill};
+}
+function dotDS(color){
+  return {borderColor:color, pointRadius:7, pointBackgroundColor:color,
+    pointBorderColor:'#07070d', pointBorderWidth:2, showLine:false};
+}
+
+// ===== PANEL SWITCH (lazy) =====
+const initialized={};
+function showPanel(id,btn){
+  document.querySelectorAll('.sim-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
   btn.classList.add('active');
-  if (!initialized[id]) {
-    initialized[id] = true;
-    if (id==='jfet') initJFET();
-    else if (id==='mosfet') initMOSFET();
-    else if (id==='vdiv') initVDiv();
-    else if (id==='amp') initAmp();
-    else if (id==='cap') initCap();
+  if(!initialized[id]){
+    initialized[id]=true;
+    ({jfet:initJFET,mosfet:initMOSFET,vdiv:initVDiv,amp:initAmp,cap:initCap})[id]?.();
   }
 }
 
-// ===== HERO CHART — lightweight =====
-const heroCtx = document.getElementById('heroChart').getContext('2d');
-const heroData = Array.from({length: 30}, (_, i) => ({
-  x: i, y: 10 * (1 - Math.exp(-i / 10))
-}));
-new Chart(heroCtx, {
-  type: 'line',
-  data: {datasets: [{
-    data: heroData,
-    borderColor: '#c8f060', borderWidth: 1.5,
-    pointRadius: 0, tension: 0.4,
-    fill: {target: 'origin', above: 'rgba(200,240,96,0.06)'}
-  }]},
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    animation: false,
-    plugins: {legend:{display:false}, tooltip:{enabled:false}},
-    scales: {x:{display:false}, y:{display:false}}
-  }
+// ===== HERO =====
+mkChart('heroChart',{
+  type:'line',
+  data:{
+    labels:Array.from({length:30},(_,i)=>i),
+    datasets:[{data:Array.from({length:30},(_,i)=>+(10*(1-Math.exp(-i/10))).toFixed(3)),
+      borderColor:'#c8f060',borderWidth:1.5,pointRadius:0,tension:0.4,
+      backgroundColor:'rgba(200,240,96,0.06)',fill:true}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{display:false},tooltip:{enabled:false}},
+    scales:{x:{display:false},y:{display:false}}}
 });
 
 // ===== JFET =====
 let jfetChart;
-function initJFET() {
-  const ctx = document.getElementById('jfetChart').getContext('2d');
-  jfetChart = new Chart(ctx, {
-    type: 'line',
-    data: {datasets: [
-      {label: 'I_D (mA)', data: [], borderColor: '#c8f060', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: {target: 'origin', above: 'rgba(200,240,96,0.06)'}},
-      {label: 'Operating point', data: [], borderColor: '#f0b060', pointRadius: 6, pointBackgroundColor: '#f0b060', showLine: false}
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: {duration: 100},
-      plugins: {legend: {display: false}},
-      scales: {
-        x: {type:'linear', title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:-4, max:0},
-        y: {title: {display: true, text: 'I_D (mA)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
+function initJFET(){
+  // generate labels & data for V_GS from -4 to 0
+  const N=81; // -4 to 0, step 0.05
+  const labels=Array.from({length:N},(_,i)=>+(-4+i*0.05).toFixed(3));
+  jfetChart=mkChart('jfetChart',{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'I_D',data:Array(N).fill(0),...lineDS('#c8f060','rgba(200,240,96,0.07)')},
+        {label:'OP',data:[],borderColor:'#f0b060',pointRadius:8,
+          pointBackgroundColor:'#f0b060',showLine:false,
+          parsing:{xAxisKey:'x',yAxisKey:'y'}}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:ctx=>ctx.datasetIndex===0?`I_D: ${ctx.parsed.y.toFixed(2)} mA`:''
+      }}},
+      scales:{
+        x:{type:'category',ticks:{maxTicksLimit:6,callback:(_,i)=>labels[i]!=null&&i%16===0?labels[i].toFixed(1):''},
+          title:{display:true,text:'V_GS (V)',color:'#7e7d90'},
+          grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{min:0,title:{display:true,text:'I_D (mA)',color:'#7e7d90'},
+          grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
   updateJFET();
 }
 
-function updateJFET() {
-  const vgs = parseFloat(document.getElementById('jfet-vgs').value);
-  const vds = parseFloat(document.getElementById('jfet-vds').value);
-  const idss = parseFloat(document.getElementById('jfet-idss').value);
-  const vp = parseFloat(document.getElementById('jfet-vp').value);
+function updateJFET(){
+  const vgs=+document.getElementById('jfet-vgs').value;
+  const vds=+document.getElementById('jfet-vds').value;
+  const idss=+document.getElementById('jfet-idss').value;
+  const vp=+document.getElementById('jfet-vp').value;
 
-  document.getElementById('jfet-vgs-val').textContent = vgs.toFixed(1) + ' V';
-  document.getElementById('jfet-vds-val').textContent = vds.toFixed(1) + ' V';
-  document.getElementById('jfet-idss-val').textContent = idss.toFixed(1) + ' mA';
-  document.getElementById('jfet-vp-val').textContent = vp.toFixed(1) + ' V';
+  document.getElementById('jfet-vgs-val').textContent=vgs.toFixed(1)+' V';
+  document.getElementById('jfet-vds-val').textContent=vds.toFixed(1)+' V';
+  document.getElementById('jfet-idss-val').textContent=idss.toFixed(1)+' mA';
+  document.getElementById('jfet-vp-val').textContent=vp.toFixed(1)+' V';
 
-  // curve
-  const pts = [];
-  for (let v = vp; v <= 0.05; v += 0.05) {
-    const id = v <= vp ? 0 : idss * Math.pow(1 - v / vp, 2);
-    pts.push({x: parseFloat(v.toFixed(3)), y: parseFloat(Math.max(0, id).toFixed(4))});
+  const N=81;
+  const curve=Array.from({length:N},(_,i)=>{
+    const v=-4+i*0.05;
+    return v<=vp?0:+(idss*Math.pow(1-v/vp,2)).toFixed(4);
+  });
+
+  let id_op,region;
+  if(vgs<=vp){id_op=0;region='CUTOFF';}
+  else{
+    const sat=vgs-vp;
+    if(vds<sat){id_op=Math.max(0,idss*(2*(1-vgs/vp)*(vds/(-vp))-Math.pow(vds/(-vp),2)));region='OHMIC';}
+    else{id_op=idss*Math.pow(1-vgs/vp,2);region='SATURATION';}
   }
+  id_op=Math.max(0,id_op);
 
-  // current op point
-  let id_op, region;
-  const vp_off = vp;
-  if (vgs <= vp_off) {
-    id_op = 0; region = 'CUTOFF';
-  } else {
-    const sat_boundary = vgs - vp_off;
-    if (vds < sat_boundary) {
-      id_op = idss * (2 * (1 - vgs / vp_off) * (vds / (-vp_off)) - Math.pow(vds / (-vp_off), 2));
-      region = 'OHMIC';
-    } else {
-      id_op = idss * Math.pow(1 - vgs / vp_off, 2);
-      region = 'SATURATION';
-    }
-  }
-  id_op = Math.max(0, id_op);
+  // find closest label index for operating point marker
+  const labels=jfetChart.data.labels;
+  const opIdx=labels.reduce((ci,v,i)=>Math.abs(v-vgs)<Math.abs(labels[ci]-vgs)?i:ci,0);
+  const opData=Array(labels.length).fill(null);
+  opData[opIdx]=+id_op.toFixed(4);
 
-  jfetChart.data.datasets[0].data = pts;
-  jfetChart.data.datasets[1].data = [{x: vgs, y: parseFloat(id_op.toFixed(4))}];
-  jfetChart.update();
+  jfetChart.data.datasets[0].data=curve;
+  jfetChart.data.datasets[1]={
+    label:'OP',data:opData,
+    borderColor:'#f0b060',
+    pointRadius:labels.map((_,i)=>i===opIdx?8:0),
+    pointBackgroundColor:'#f0b060',showLine:false
+  };
+  jfetChart.update('none');
 
-  document.getElementById('jfet-id-out').textContent = id_op.toFixed(2);
-  document.getElementById('jfet-region').textContent = region;
-  document.getElementById('jfet-region-badge').textContent = region;
-
-  const colors = {CUTOFF: ['#60d4f0','rgba(96,212,240,0.07)','rgba(96,212,240,0.18)'], OHMIC: ['#f0b060','rgba(240,176,96,0.07)','rgba(240,176,96,0.18)'], SATURATION: ['#c8f060','rgba(200,240,96,0.07)','rgba(200,240,96,0.18)']};
-  const [c, bg, br] = colors[region];
-  const badge = document.getElementById('jfet-region-badge');
-  badge.style.color = c; badge.style.background = bg; badge.style.borderColor = br;
-
-  document.getElementById('jfet-formula-live').textContent =
-    `→ I_D = ${idss.toFixed(1)} × (1 − (${vgs.toFixed(1)}) / (${vp.toFixed(1)}))² = ${id_op.toFixed(3)} mA`;
+  document.getElementById('jfet-id-out').textContent=id_op.toFixed(2);
+  document.getElementById('jfet-region').textContent=region;
+  document.getElementById('jfet-region-badge').textContent=region;
+  const cols={CUTOFF:['#60d4f0','rgba(96,212,240,0.07)','rgba(96,212,240,0.18)'],
+    OHMIC:['#f0b060','rgba(240,176,96,0.07)','rgba(240,176,96,0.18)'],
+    SATURATION:['#c8f060','rgba(200,240,96,0.07)','rgba(200,240,96,0.18)']};
+  const [c,bg,br]=cols[region];
+  const badge=document.getElementById('jfet-region-badge');
+  badge.style.color=c;badge.style.background=bg;badge.style.borderColor=br;
+  document.getElementById('jfet-formula-live').textContent=
+    `→ I_D = ${idss.toFixed(1)} × (1 − ${vgs.toFixed(1)} / ${vp.toFixed(1)})² = ${id_op.toFixed(3)} mA`;
 }
 
 // ===== MOSFET =====
 let mosfetChart;
-function initMOSFET() {
-  const ctx = document.getElementById('mosfetChart').getContext('2d');
-  mosfetChart = new Chart(ctx, {
-    type: 'line',
-    data: {datasets: [
-      {label: 'I_D', data: [], borderColor: '#60d4f0', borderWidth: 2, pointRadius: 0, tension: 0.2, fill: {target: 'origin', above: 'rgba(96,212,240,0.06)'}},
-      {label: 'OP', data: [], borderColor: '#f0b060', pointRadius: 6, pointBackgroundColor: '#f0b060', showLine: false}
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: {duration: 100},
-      plugins: {legend: {display: false}},
-      scales: {
-        x: {type:'linear', title: {display: true, text: 'V_GS (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0, max:12},
-        y: {title: {display: true, text: 'I_D (mA)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
+function initMOSFET(){
+  const N=121; // 0 to 12, step 0.1
+  const labels=Array.from({length:N},(_,i)=>+(i*0.1).toFixed(1));
+  mosfetChart=mkChart('mosfetChart',{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'I_D',data:Array(N).fill(0),...lineDS('#60d4f0','rgba(96,212,240,0.07)')},
+        {label:'OP',data:Array(N).fill(null),borderColor:'#f0b060',
+          pointRadius:Array(N).fill(0),pointBackgroundColor:'#f0b060',showLine:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{type:'category',ticks:{maxTicksLimit:7,callback:(_,i)=>labels[i]%2===0?labels[i]:''},
+          title:{display:true,text:'V_GS (V)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{min:0,title:{display:true,text:'I_D (mA)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
   updateMOSFET();
 }
 
-function updateMOSFET() {
-  const vgs = parseFloat(document.getElementById('mos-vgs').value);
-  const vt = parseFloat(document.getElementById('mos-vt').value);
-  const k = parseFloat(document.getElementById('mos-k').value);
+function updateMOSFET(){
+  const vgs=+document.getElementById('mos-vgs').value;
+  const vt=+document.getElementById('mos-vt').value;
+  const k=+document.getElementById('mos-k').value;
 
-  document.getElementById('mos-vgs-val').textContent = vgs.toFixed(1) + ' V';
-  document.getElementById('mos-vt-val').textContent = vt.toFixed(1) + ' V';
-  document.getElementById('mos-k-val').textContent = k.toFixed(2) + ' mA/V²';
+  document.getElementById('mos-vgs-val').textContent=vgs.toFixed(1)+' V';
+  document.getElementById('mos-vt-val').textContent=vt.toFixed(1)+' V';
+  document.getElementById('mos-k-val').textContent=k.toFixed(2)+' mA/V²';
 
-  const pts = [];
-  for (let v = 0; v <= 12; v += 0.1) {
-    const id = v <= vt ? 0 : k * Math.pow(v - vt, 2);
-    pts.push({x: parseFloat(v.toFixed(2)), y: parseFloat(id.toFixed(4))});
-  }
+  const N=121;
+  const labels=mosfetChart.data.labels;
+  const curve=labels.map(v=>v<=vt?0:+(k*Math.pow(v-vt,2)).toFixed(4));
+  const id_op=vgs<=vt?0:+(k*Math.pow(vgs-vt,2)).toFixed(4);
+  const state=vgs<=vt?'OFF':'ON';
 
-  const id_op = vgs <= vt ? 0 : k * Math.pow(vgs - vt, 2);
-  const state = vgs <= vt ? 'OFF' : 'ON';
+  const opIdx=labels.reduce((ci,v,i)=>Math.abs(v-vgs)<Math.abs(labels[ci]-vgs)?i:ci,0);
+  const opData=Array(N).fill(null); opData[opIdx]=id_op;
+  const opR=Array(N).fill(0); opR[opIdx]=8;
 
-  mosfetChart.data.datasets[0].data = pts;
-  mosfetChart.data.datasets[1].data = [{x: vgs, y: parseFloat(id_op.toFixed(4))}];
-  mosfetChart.update();
+  mosfetChart.data.datasets[0].data=curve;
+  mosfetChart.data.datasets[1].data=opData;
+  mosfetChart.data.datasets[1].pointRadius=opR;
+  mosfetChart.update('none');
 
-  document.getElementById('mos-id-out').textContent = id_op.toFixed(2);
-  document.getElementById('mos-state').textContent = state;
-  const badge = document.getElementById('mos-badge');
-  badge.textContent = state;
-  if (state === 'OFF') {
-    badge.style.color = '#e060c0'; badge.style.background = 'rgba(224,96,192,0.07)'; badge.style.borderColor = 'rgba(224,96,192,0.18)';
-  } else {
-    badge.style.color = '#60d4f0'; badge.style.background = 'rgba(96,212,240,0.07)'; badge.style.borderColor = 'rgba(96,212,240,0.18)';
-  }
-
-  document.getElementById('mos-formula-live').textContent =
-    vgs <= vt
-      ? `→ V_GS (${vgs.toFixed(1)}V) ≤ V_T (${vt.toFixed(1)}V) → MOSFET OFF, I_D = 0`
-      : `→ I_D = ${k.toFixed(2)} × (${vgs.toFixed(1)} − ${vt.toFixed(1)})² = ${id_op.toFixed(3)} mA`;
+  document.getElementById('mos-id-out').textContent=id_op.toFixed(2);
+  document.getElementById('mos-state').textContent=state;
+  const badge=document.getElementById('mos-badge');
+  badge.textContent=state;
+  badge.style.color=state==='OFF'?'#e060c0':'#60d4f0';
+  badge.style.background=state==='OFF'?'rgba(224,96,192,0.07)':'rgba(96,212,240,0.07)';
+  badge.style.borderColor=state==='OFF'?'rgba(224,96,192,0.18)':'rgba(96,212,240,0.18)';
+  document.getElementById('mos-formula-live').textContent=
+    vgs<=vt?`→ V_GS (${vgs.toFixed(1)}V) ≤ V_T (${vt.toFixed(1)}V) → OFF, I_D = 0`
+    :`→ I_D = ${k.toFixed(2)} × (${vgs.toFixed(1)} − ${vt.toFixed(1)})² = ${id_op.toFixed(3)} mA`;
 }
 
 // ===== VOLTAGE DIVIDER =====
 let vdivChart;
-function initVDiv() {
-  const ctx = document.getElementById('vdivChart').getContext('2d');
-  vdivChart = new Chart(ctx, {
-    type: 'line',
-    data: {datasets: [
-      {label: 'V_out (no load)', data: [], borderColor: '#60d4f0', borderWidth: 2, pointRadius: 0, tension: 0.3},
-      {label: 'V_out (loaded)', data: [], borderColor: '#f0b060', borderWidth: 1.5, pointRadius: 0, tension: 0.3, borderDash: [4,3]},
-      {label: 'OP', data: [], borderColor: '#c8f060', pointRadius: 6, pointBackgroundColor: '#c8f060', showLine: false}
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: {duration: 100},
-      plugins: {legend: {display: false}},
-      scales: {
-        x: {type:'linear', title: {display: true, text: 'R2 (kΩ)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0, max:20},
-        y: {title: {display: true, text: 'V_out (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
+function initVDiv(){
+  const N=100;
+  const labels=Array.from({length:N},(_,i)=>+(0.2+i*0.2).toFixed(1)); // 0.2 to 20 kΩ
+  vdivChart=mkChart('vdivChart',{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'No load',data:Array(N).fill(0),...lineDS('#60d4f0')},
+        {label:'Loaded',data:Array(N).fill(0),borderColor:'#f0b060',borderWidth:1.5,
+          pointRadius:0,tension:0.3,borderDash:[5,3]},
+        {label:'OP',data:Array(N).fill(null),borderColor:'#c8f060',
+          pointRadius:Array(N).fill(0),pointBackgroundColor:'#c8f060',showLine:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{type:'category',ticks:{maxTicksLimit:6,callback:(_,i)=>labels[i]%4===0?labels[i]:''},
+          title:{display:true,text:'R2 (kΩ)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{min:0,title:{display:true,text:'V_out (V)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
   updateVDiv();
 }
 
-function updateVDiv() {
-  const vin = parseFloat(document.getElementById('vd-vin').value);
-  const r1 = parseFloat(document.getElementById('vd-r1').value);
-  const r2 = parseFloat(document.getElementById('vd-r2').value);
-  const rl_raw = parseFloat(document.getElementById('vd-rl').value);
-  const rl = rl_raw === 0 ? Infinity : rl_raw;
+function updateVDiv(){
+  const vin=+document.getElementById('vd-vin').value;
+  const r1=+document.getElementById('vd-r1').value;
+  const r2=+document.getElementById('vd-r2').value;
+  const rl_raw=+document.getElementById('vd-rl').value;
+  const rl=rl_raw===0?Infinity:rl_raw;
 
-  document.getElementById('vd-vin-val').textContent = vin.toFixed(1) + ' V';
-  document.getElementById('vd-r1-val').textContent = r1.toFixed(1) + ' kΩ';
-  document.getElementById('vd-r2-val').textContent = r2.toFixed(1) + ' kΩ';
-  document.getElementById('vd-rl-val').textContent = rl_raw === 0 ? '∞ (no load)' : rl_raw.toFixed(1) + ' kΩ';
+  document.getElementById('vd-vin-val').textContent=vin.toFixed(1)+' V';
+  document.getElementById('vd-r1-val').textContent=r1.toFixed(1)+' kΩ';
+  document.getElementById('vd-r2-val').textContent=r2.toFixed(1)+' kΩ';
+  document.getElementById('vd-rl-val').textContent=rl_raw===0?'∞ (no load)':rl_raw.toFixed(1)+' kΩ';
 
-  const pts_unloaded = [], pts_loaded = [];
-  for (let r = 0.1; r <= 20; r += 0.2) {
-    const v_ul = vin * r / (r1 + r);
-    const r_eff = rl === Infinity ? r : (r * rl) / (r + rl);
-    const v_l = vin * r_eff / (r1 + r_eff);
-    pts_unloaded.push({x: parseFloat(r.toFixed(2)), y: parseFloat(v_ul.toFixed(4))});
-    pts_loaded.push({x: parseFloat(r.toFixed(2)), y: parseFloat(v_l.toFixed(4))});
-  }
+  const labels=vdivChart.data.labels;
+  const ul=labels.map(r=>+(vin*r/(r1+r)).toFixed(4));
+  const ld=labels.map(r=>{const re=rl===Infinity?r:(r*rl)/(r+rl);return+(vin*re/(r1+re)).toFixed(4);});
 
-  const vout_ul = vin * r2 / (r1 + r2);
-  const r2_eff = rl === Infinity ? r2 : (r2 * rl) / (r2 + rl);
-  const vout_l = vin * r2_eff / (r1 + r2_eff);
-  const vout = rl === Infinity ? vout_ul : vout_l;
-  const ratio = r2 / (r1 + r2);
-  const current = vin / (r1 + r2);
-  const p1 = current * current * r1;
-  const p2 = current * current * r2;
+  const vout_ul=+(vin*r2/(r1+r2)).toFixed(4);
+  const r2e=rl===Infinity?r2:(r2*rl)/(r2+rl);
+  const vout=+(vin*r2e/(r1+r2e)).toFixed(4);
+  const ratio=r2/(r1+r2);
+  const current=vin/(r1+r2);
+  const p1=current*current*r1;
+  const p2=current*current*r2;
 
-  vdivChart.data.datasets[0].data = pts_unloaded;
-  vdivChart.data.datasets[1].data = pts_loaded;
-  vdivChart.data.datasets[2].data = [{x: r2, y: parseFloat(vout.toFixed(4))}];
-  vdivChart.update();
+  const opIdx=labels.reduce((ci,v,i)=>Math.abs(v-r2)<Math.abs(labels[ci]-r2)?i:ci,0);
+  const opData=Array(labels.length).fill(null); opData[opIdx]=vout;
+  const opR=Array(labels.length).fill(0); opR[opIdx]=7;
 
-  document.getElementById('vd-vout').textContent = vout.toFixed(2);
-  document.getElementById('vd-ratio').textContent = ratio.toFixed(3);
-  document.getElementById('vd-current').textContent = (current * 1000).toFixed(2) + ' mA';
-  document.getElementById('vd-p1').textContent = (p1 * 1000).toFixed(2) + ' mW';
-  document.getElementById('vd-p2').textContent = (p2 * 1000).toFixed(2) + ' mW';
+  vdivChart.data.datasets[0].data=ul;
+  vdivChart.data.datasets[1].data=ld;
+  vdivChart.data.datasets[2].data=opData;
+  vdivChart.data.datasets[2].pointRadius=opR;
+  vdivChart.update('none');
 
-  const badge = document.getElementById('vd-load-badge');
-  badge.textContent = rl === Infinity ? 'NO LOAD' : 'LOADED';
-  if (rl !== Infinity) {
-    badge.style.color = '#f0b060'; badge.style.background = 'rgba(240,176,96,0.07)'; badge.style.borderColor = 'rgba(240,176,96,0.18)';
-  } else {
-    badge.style.color = '#60d4f0'; badge.style.background = 'rgba(96,212,240,0.07)'; badge.style.borderColor = 'rgba(96,212,240,0.18)';
-  }
-
-  document.getElementById('vd-formula-live').textContent =
+  document.getElementById('vd-vout').textContent=vout.toFixed(2);
+  document.getElementById('vd-ratio').textContent=ratio.toFixed(3);
+  document.getElementById('vd-current').textContent=(current*1000).toFixed(2)+' mA';
+  document.getElementById('vd-p1').textContent=(p1*1000).toFixed(2)+' mW';
+  document.getElementById('vd-p2').textContent=(p2*1000).toFixed(2)+' mW';
+  const badge=document.getElementById('vd-load-badge');
+  badge.textContent=rl===Infinity?'NO LOAD':'LOADED';
+  badge.style.color=rl===Infinity?'#60d4f0':'#f0b060';
+  badge.style.background=rl===Infinity?'rgba(96,212,240,0.07)':'rgba(240,176,96,0.07)';
+  badge.style.borderColor=rl===Infinity?'rgba(96,212,240,0.18)':'rgba(240,176,96,0.18)';
+  document.getElementById('vd-formula-live').textContent=
     `→ V_out = ${vin.toFixed(1)} × ${r2.toFixed(1)} / (${r1.toFixed(1)} + ${r2.toFixed(1)}) = ${vout_ul.toFixed(3)} V  |  k = ${ratio.toFixed(3)}`;
 }
 
 // ===== AMPLIFIER =====
 let ampChart;
-function initAmp() {
-  const ctx = document.getElementById('ampChart').getContext('2d');
-  ampChart = new Chart(ctx, {
-    type: 'line',
-    data: {datasets: [{
-      label: 'Gain (dB)', data: [],
-      borderColor: '#c8f060', borderWidth: 2, pointRadius: 0, tension: 0,
-      fill: {target: 'origin', above: 'rgba(200,240,96,0.05)'}
+function initAmp(){
+  const freqs=[10,20,50,100,200,500,1e3,2e3,5e3,10e3,20e3,50e3,
+    100e3,200e3,500e3,1e6,2e6,5e6,10e6];
+  const labels=freqs.map(f=>f>=1e6?f/1e6+'M':f>=1e3?f/1e3+'k':f+'');
+  ampChart=mkChart('ampChart',{
+    type:'line',
+    data:{labels:labels,datasets:[{
+      label:'Gain',data:Array(freqs.length).fill(0),
+      ...lineDS('#c8f060','rgba(200,240,96,0.05)')
     }]},
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: {duration: 100},
-      plugins: {legend: {display: false}},
-      scales: {
-        x: {type: 'logarithmic', title: {display: true, text: 'Frequency (Hz)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}},
-        y: {title: {display: true, text: 'Gain (dB)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}}
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{type:'category',title:{display:true,text:'Frequency',color:'#7e7d90'},
+          grid:{color:'rgba(255,255,255,0.04)'},ticks:{maxRotation:45}},
+        y:{title:{display:true,text:'Gain (dB)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
+  ampChart._freqs=freqs;
   updateAmp();
 }
 
-function updateAmp() {
-  const vin = parseFloat(document.getElementById('amp-vin').value);
-  const av = parseFloat(document.getElementById('amp-av').value);
-  const fh = parseFloat(document.getElementById('amp-fh').value) * 1000;
-  const rin = parseFloat(document.getElementById('amp-rin').value);
+function updateAmp(){
+  const vin=+document.getElementById('amp-vin').value;
+  const av=+document.getElementById('amp-av').value;
+  const fh=+document.getElementById('amp-fh').value*1000;
 
-  document.getElementById('amp-vin-val').textContent = vin.toFixed(2) + ' V';
-  document.getElementById('amp-av-val').textContent = '×' + Math.round(av);
-  document.getElementById('amp-fh-val').textContent = (fh / 1000).toFixed(0) + ' kHz';
-  document.getElementById('amp-rin-val').textContent = rin.toFixed(1) + ' kΩ';
+  document.getElementById('amp-vin-val').textContent=vin.toFixed(2)+' V';
+  document.getElementById('amp-av-val').textContent='×'+Math.round(av);
+  document.getElementById('amp-fh-val').textContent=(fh/1000).toFixed(0)+' kHz';
+  document.getElementById('amp-rin-val').textContent=document.getElementById('amp-rin').value+' kΩ';
 
-  const fl = 20;
-  const pts = [];
-  const freqs = [];
-  for (let i = 0; i <= 100; i++) {
-    freqs.push(Math.pow(10, 1 + i * 5 / 100));
-  }
-  freqs.forEach(f => {
-    const gain_mag = av / Math.sqrt(1 + Math.pow(f / fh, 2)) / Math.sqrt(1 + Math.pow(fl / f, 2));
-    const gain_db = 20 * Math.log10(Math.max(gain_mag, 0.001));
-    pts.push({x: parseFloat(f.toFixed(0)), y: parseFloat(gain_db.toFixed(2))});
+  const fl=20;
+  const freqs=ampChart._freqs;
+  const curve=freqs.map(f=>{
+    const gm=av/Math.sqrt(1+Math.pow(f/fh,2))/Math.sqrt(1+Math.pow(fl/f,2));
+    return+(20*Math.log10(Math.max(gm,0.001))).toFixed(2);
   });
 
-  ampChart.data.datasets[0].data = pts;
-  ampChart.update();
+  ampChart.data.datasets[0].data=curve;
+  ampChart.update('none');
 
-  const vout = av * vin;
-  const db = 20 * Math.log10(av);
-  const ap = av * av;
-  const gbp = av * fh;
-
-  document.getElementById('amp-vout').textContent = vout.toFixed(2);
-  document.getElementById('amp-db').textContent = db.toFixed(1);
-  document.getElementById('amp-ap').textContent = ap.toFixed(0) + 'x';
-  document.getElementById('amp-gbp').textContent = (gbp / 1e6).toFixed(2) + ' MHz';
-  document.getElementById('amp-3db').textContent = (fh / 1000).toFixed(0) + ' kHz';
-
-  document.getElementById('amp-formula-live').textContent =
-    `→ V_out = ${av}×${vin.toFixed(2)} = ${vout.toFixed(2)} V  |  A_dB = ${db.toFixed(1)} dB  |  GBP = ${(gbp/1e6).toFixed(2)} MHz`;
+  const vout=av*vin;
+  const db=20*Math.log10(av);
+  document.getElementById('amp-vout').textContent=vout.toFixed(2);
+  document.getElementById('amp-db').textContent=db.toFixed(1);
+  document.getElementById('amp-ap').textContent=(av*av).toFixed(0)+'x';
+  document.getElementById('amp-gbp').textContent=((av*fh)/1e6).toFixed(2)+' MHz';
+  document.getElementById('amp-3db').textContent=(fh/1000).toFixed(0)+' kHz';
+  document.getElementById('amp-formula-live').textContent=
+    `→ V_out = ${av}×${vin.toFixed(2)} = ${vout.toFixed(2)} V  |  A_dB = ${db.toFixed(1)} dB  |  GBP = ${((av*fh)/1e6).toFixed(2)} MHz`;
 }
 
 // ===== CAPACITOR =====
 let capChart;
-function initCap() {
-  const ctx = document.getElementById('capChart').getContext('2d');
-  capChart = new Chart(ctx, {
-    type: 'line',
-    data: {datasets: [
-      {label: 'V_C', data: [], borderColor: '#e060c0', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: {target: 'origin', above: 'rgba(224,96,192,0.06)'}},
-      {label: 'τ markers', data: [], borderColor: '#f0b060', pointRadius: 5, pointBackgroundColor: '#f0b060', showLine: false},
-      {label: 'cursor', data: [], borderColor: '#60d4f0', pointRadius: 7, pointBackgroundColor: '#60d4f0', pointBorderColor: '#07070d', pointBorderWidth: 2, showLine: false}
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: {duration: 80},
-      plugins: {legend: {display: false}},
-      scales: {
-        x: {type:'linear', title: {display: true, text: 'Time (s)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min:0},
-        y: {title: {display: true, text: 'V_C (V)', color: '#7e7d90'}, grid: {color: 'rgba(255,255,255,0.04)'}, min: 0}
+function initCap(){
+  const N=60;
+  capChart=mkChart('capChart',{
+    type:'line',
+    data:{
+      labels:Array(N).fill(''),
+      datasets:[
+        {label:'V_C',data:Array(N).fill(0),...lineDS('#e060c0','rgba(224,96,192,0.07)')},
+        {label:'τ',data:Array(N).fill(null),borderColor:'#f0b060',
+          pointRadius:Array(N).fill(0),pointBackgroundColor:'#f0b060',showLine:false},
+        {label:'cursor',data:Array(N).fill(null),borderColor:'#60d4f0',
+          pointRadius:Array(N).fill(0),pointBackgroundColor:'#60d4f0',
+          pointBorderColor:'#07070d',pointBorderWidth:2,showLine:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:80},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:ctx=>ctx.datasetIndex===0?`V_C: ${ctx.parsed.y.toFixed(3)} V`:''
+      }}},
+      scales:{
+        x:{title:{display:true,text:'Time (s)',color:'#7e7d90'},
+          grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{maxTicksLimit:7,callback:(_,i)=>{
+            const t=capChart._tmax*i/(capChart.data.labels.length-1);
+            return t.toFixed(1);
+          }}},
+        y:{min:0,title:{display:true,text:'V_C (V)',color:'#7e7d90'},grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
   updateCap();
 }
 
-function updateCap() {
-  const vs = parseFloat(document.getElementById('cap-vs').value);
-  const r = parseFloat(document.getElementById('cap-r').value) * 1000;
-  const c = parseFloat(document.getElementById('cap-c').value) * 1e-6;
+function updateCap(){
+  const vs=+document.getElementById('cap-vs').value;
+  const r=+document.getElementById('cap-r').value*1000;
+  const c=+document.getElementById('cap-c').value*1e-6;
 
-  document.getElementById('cap-vs-val').textContent = vs.toFixed(1) + ' V';
-  document.getElementById('cap-r-val').textContent = (r / 1000).toFixed(1) + ' kΩ';
-  document.getElementById('cap-c-val').textContent = (c * 1e6).toFixed(0) + ' µF';
+  document.getElementById('cap-vs-val').textContent=vs.toFixed(1)+' V';
+  document.getElementById('cap-r-val').textContent=(r/1000).toFixed(1)+' kΩ';
+  document.getElementById('cap-c-val').textContent=(c*1e6).toFixed(0)+' µF';
 
-  const tau = r * c;
-  const t_full = 5 * tau;
+  const tau=r*c;
+  const tmax=6*tau;
+  capChart._tmax=tmax;
 
-  document.getElementById('cap-tau').textContent = tau.toFixed(2);
-  document.getElementById('cap-t5').textContent = t_full.toFixed(2) + ' s';
+  document.getElementById('cap-tau').textContent=tau.toFixed(2);
+  document.getElementById('cap-t5').textContent=(5*tau).toFixed(2)+' s';
 
-  // update slider max to 6τ
-  const slider = document.getElementById('cap-t');
-  slider.max = Math.round(t_full * 120);
+  const N=60;
+  const curve=Array.from({length:N},(_,i)=>{
+    const t=tmax*i/(N-1);
+    return+(vs*(1-Math.exp(-t/tau))).toFixed(4);
+  });
 
-  const pts = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = (t_full * 1.2) * i / 100;
-    const vc = vs * (1 - Math.exp(-t / tau));
-    pts.push({x: parseFloat(t.toFixed(4)), y: parseFloat(vc.toFixed(4))});
-  }
+  // tau marker indices (1,2,3,5 tau)
+  const tauPts=Array(N).fill(null);
+  const tauR=Array(N).fill(0);
+  [1,2,3,5].forEach(n=>{
+    const t=n*tau;
+    const i=Math.round(t/tmax*(N-1));
+    if(i>=0&&i<N){tauPts[i]=curve[i];tauR[i]=6;}
+  });
 
-  // tau markers
-  const tau_pts = [1, 2, 3, 5].map(n => ({
-    x: parseFloat((n * tau).toFixed(4)),
-    y: parseFloat((vs * (1 - Math.exp(-n))).toFixed(4))
-  }));
+  capChart.data.datasets[0].data=curve;
+  capChart.data.datasets[1].data=tauPts;
+  capChart.data.datasets[1].pointRadius=tauR;
+  capChart.update('none');
 
-  capChart.data.datasets[0].data = pts;
-  capChart.data.datasets[1].data = tau_pts;
-  capChart.update();
-
-  document.getElementById('cap-formula-live').textContent =
-    `→ τ = ${(r/1000).toFixed(1)}kΩ × ${(c*1e6).toFixed(0)}µF = ${tau.toFixed(2)}s  |  Full charge at 5τ = ${t_full.toFixed(2)}s`;
-
+  document.getElementById('cap-t').max=100;
+  document.getElementById('cap-formula-live').textContent=
+    `→ τ = ${(r/1000).toFixed(1)}kΩ × ${(c*1e6).toFixed(0)}µF = ${tau.toFixed(2)}s  |  5τ = ${(5*tau).toFixed(2)}s`;
   updateCapCursor();
 }
 
-function updateCapCursor() {
-  const vs = parseFloat(document.getElementById('cap-vs').value);
-  const r = parseFloat(document.getElementById('cap-r').value) * 1000;
-  const c = parseFloat(document.getElementById('cap-c').value) * 1e-6;
-  const tau = r * c;
-  const t_full = 5 * tau;
+function updateCapCursor(){
+  if(!capChart) return;
+  const vs=+document.getElementById('cap-vs').value;
+  const r=+document.getElementById('cap-r').value*1000;
+  const c=+document.getElementById('cap-c').value*1e-6;
+  const tau=r*c; const tmax=capChart._tmax||6*tau;
+  const pct=+document.getElementById('cap-t').value/100;
+  const t=tmax*pct;
 
-  const slider = document.getElementById('cap-t');
-  const t_raw = parseFloat(slider.value);
-  const t = (t_full * 1.2) * t_raw / parseFloat(slider.max);
+  document.getElementById('cap-t-val').textContent=t.toFixed(2)+' s';
+  const vc=vs*(1-Math.exp(-t/tau));
+  const charged=(vc/vs*100);
+  document.getElementById('cap-vc-cursor').textContent=vc.toFixed(2)+' V';
+  document.getElementById('cap-charge-pct').textContent=charged.toFixed(1)+'%';
 
-  document.getElementById('cap-t-val').textContent = t.toFixed(2) + ' s';
+  const N=60;
+  const idx=Math.round(pct*(N-1));
+  const cData=Array(N).fill(null); cData[idx]=vc;
+  const cR=Array(N).fill(0); cR[idx]=8;
+  capChart.data.datasets[2].data=cData;
+  capChart.data.datasets[2].pointRadius=cR;
+  capChart.update('none');
 
-  const vc = vs * (1 - Math.exp(-t / tau));
-  const pct = (vc / vs * 100);
-
-  document.getElementById('cap-vc-cursor').textContent = vc.toFixed(2) + ' V';
-  document.getElementById('cap-charge-pct').textContent = pct.toFixed(1) + '%';
-
-  if (capChart && capChart.data.datasets[2]) {
-    capChart.data.datasets[2].data = [{x: parseFloat(t.toFixed(4)), y: parseFloat(vc.toFixed(4))}];
-    capChart.update('none');
-  }
-
-  const badge = document.getElementById('cap-badge');
-  if (pct >= 99) {
-    badge.textContent = 'FULLY CHARGED';
-    badge.style.color = '#c8f060'; badge.style.background = 'rgba(200,240,96,0.07)'; badge.style.borderColor = 'rgba(200,240,96,0.18)';
-  } else {
-    badge.textContent = 'CHARGING';
-    badge.style.color = '#e060c0'; badge.style.background = 'rgba(224,96,192,0.07)'; badge.style.borderColor = 'rgba(224,96,192,0.18)';
-  }
+  const badge=document.getElementById('cap-badge');
+  badge.textContent=charged>=99?'FULLY CHARGED':'CHARGING';
+  badge.style.color=charged>=99?'#c8f060':'#e060c0';
+  badge.style.background=charged>=99?'rgba(200,240,96,0.07)':'rgba(224,96,192,0.07)';
+  badge.style.borderColor=charged>=99?'rgba(200,240,96,0.18)':'rgba(224,96,192,0.18)';
 }
 
-// ===== INIT — only first panel on load =====
-window.addEventListener('load', () => {
-  initialized['jfet'] = true;
+// ===== INIT first panel =====
+window.addEventListener('load',()=>{
+  initialized['jfet']=true;
   initJFET();
 });
 </script>
