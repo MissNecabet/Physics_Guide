@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physics Lab — Najabat & Nijat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #181824;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text2: #9998a0;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --amber: #f0b860;
+    --pink: #f060b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* GRID LINES */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  * { position: relative; z-index: 1; }
+
+  /* NAV */
+  nav {
+    padding: 1.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.85);
+  }
+
+  .nav-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 13px;
+    color: var(--text2);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6rem 3rem 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--text2);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    padding: 0.8rem 1.8rem;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .btn-outline {
+    padding: 0.8rem 1.8rem;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    display: inline-block;
+  }
+
+  .btn-outline:hover { border-color: var(--text); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: flex;
+    gap: 3rem;
+    padding: 2rem 3rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .stat-item { }
+  .stat-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text2);
+    letter-spacing: 0.06em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* SECTION */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 5rem 3rem;
+  }
+
+  .section-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.14em;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+    margin-bottom: 3rem;
+  }
+
+  /* PROJECTS GRID */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .project-card {
+    background: var(--bg);
+    padding: 2rem;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .project-card:hover { background: var(--surface2); }
+
+  .project-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+  }
+
+  .project-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .project-desc {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    letter-spacing: 0.04em;
+  }
+
+  .tag.accent { border-color: var(--accent); color: var(--accent); }
+  .tag.blue { border-color: var(--accent2); color: var(--accent2); }
+  .tag.amber { border-color: var(--amber); color: var(--amber); }
+
+  .project-links {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .project-link {
+    font-size: 12px;
+    color: var(--text2);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color 0.2s;
+  }
+
+  .project-link:hover { color: var(--accent); }
+  .project-link::after { content: '↗'; }
+
+  /* TEAM SECTION */
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .team-card {
+    background: var(--bg);
+    padding: 2.5rem;
+    transition: background 0.2s;
+  }
+
+  .team-card:hover { background: var(--surface2); }
+
+  .team-initial {
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+  }
+
+  .team-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .team-role {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+  }
+
+  .team-bio {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 1.25rem;
+  }
+
+  .team-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  /* PUBLICATIONS */
+  .pub-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .pub-item {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.5rem;
+    align-items: center;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .pub-item:last-child { border-bottom: none; }
+  .pub-item:hover { background: var(--surface2); }
+
+  .pub-year {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .pub-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .pub-platform {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  /* PLATFORMS */
+  .platform-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  .platform-badge {
+    padding: 0.6rem 1.2rem;
+    border: 1px solid var(--border2);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--text2);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .platform-badge:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  footer p {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* VERIFIED BADGE */
+  .verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(200,240,96,0.08);
+    border: 1px solid rgba(200,240,96,0.2);
+    padding: 4px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+
+  .verified::before { content: '✓'; }
+
+  /* DIVIDER LINE */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 0;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero > * {
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero > *:nth-child(1) { animation-delay: 0.05s; }
+  .hero > *:nth-child(2) { animation-delay: 0.15s; }
+  .hero > *:nth-child(3) { animation-delay: 0.25s; }
+  .hero > *:nth-child(4) { animation-delay: 0.35s; }
+
+  /* ACCENT LINE decoration */
+  .accent-line {
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    margin-bottom: 3rem;
+  }
+
+  @media (max-width: 700px) {
+    nav { padding: 1rem 1.5rem; }
+    .hero, section { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .team-grid { grid-template-columns: 1fr; }
+    .stats-row { gap: 1.5rem; padding: 1.5rem; flex-wrap: wrap; }
+    .pub-item { grid-template-columns: 1fr; gap: 0.4rem; }
+    footer { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">PHYSLAB_AZ</span>
+  <ul class="nav-links">
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#team">Team</a></li>
+    <li><a href="#publications">Publications</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-tag">Physics · Electronics · Azerbaijan</p>
+  <h1>Making Physics<br><em>visible.</em></h1>
+  <p class="hero-desc">
+    Visual guides, lab reports, and research on electronics — created by two university students from Baku. Verified by physics teacher Telman Askeraliyev.
+  </p>
+  <div class="hero-ctas">
+    <a href="#projects" class="btn-primary">View Projects</a>
+    <a href="#publications" class="btn-outline">Publications →</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-item">
+    <div class="stat-num">6+</div>
+    <div class="stat-label">GUIDES PUBLISHED</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">3</div>
+    <div class="stat-label">PLATFORMS</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">2</div>
+    <div class="stat-label">AUTHORS</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">✓</div>
+    <div class="stat-label">TEACHER VERIFIED</div>
+  </div>
+</div>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <p class="section-tag">01 — WORK</p>
+  <h2 class="section-title">Physics Guides &<br>Research Projects</h2>
+
+  <div class="projects-grid">
+
+    <div class="project-card">
+      <p class="project-num">01 — FET</p>
+      <h3 class="project-title">Field Effect Transistors</h3>
+      <p class="project-desc">
+        Comprehensive visual guide covering JFET, E-MOSFET and D-MOSFET. Includes operating regions (Ohmic, Saturation, Cutoff), key formulas, and side-by-side comparison tables.
+      </p>
+      <div class="project-tags">
+        <span class="tag accent">JFET</span>
+        <span class="tag accent">MOSFET</span>
+        <span class="tag">Semiconductors</span>
+        <span class="tag">Visual Guide</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.academia.edu/165906555" class="project-link" target="_blank">Academia.edu</a>
+        <a href="https://www.slideshare.net/nicatmazanli" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <p class="project-num">02 — AMPLIFIERS</p>
+      <h3 class="project-title">Amplifiers & Applications</h3>
+      <p class="project-desc">
+        Lesson presentation covering amplifier theory, circuit types, gain calculations, and practical real-world applications in audio and signal processing systems.
+      </p>
+      <div class="project-tags">
+        <span class="tag blue">Signal Gain</span>
+        <span class="tag blue">Op-Amps</span>
+        <span class="tag">Circuits</span>
+        <span class="tag">Presentation</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.academia.edu/165709848" class="project-link" target="_blank">Academia.edu</a>
+        <a href="https://www.slideshare.net/nicatmazanli" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <p class="project-num">03 — LAB</p>
+      <h3 class="project-title">Transistor Lab Report</h3>
+      <p class="project-desc">
+        Technical laboratory report documenting hands-on transistor experiments, measurements, and analysis. Includes circuit diagrams and experimental data evaluation.
+      </p>
+      <div class="project-tags">
+        <span class="tag amber">Lab Report</span>
+        <span class="tag">Transistors</span>
+        <span class="tag">Measurements</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.slideshare.net/slideshow/technical-laboratory-report-transistor-report-nijat-mazanli-najabat-sofiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/286914601" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <p class="project-num">04 — COMPONENTS</p>
+      <h3 class="project-title">Capacitor Guide</h3>
+      <p class="project-desc">
+        Visual explainer of capacitor theory, types, charging/discharging behavior, and applications in filtering, energy storage, and timing circuits.
+      </p>
+      <div class="project-tags">
+        <span class="tag accent">Capacitors</span>
+        <span class="tag">RC Circuits</span>
+        <span class="tag">Energy Storage</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.slideshare.net/slideshow/capacitor-najabat-sofiyeva-and-nijat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/286799493" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <p class="project-num">05 — CIRCUITS</p>
+      <h3 class="project-title">Voltage Divider</h3>
+      <p class="project-desc">
+        Physics guide on voltage divider networks — theory, design principles, calculations, and practical use cases in sensor circuits and biasing networks.
+      </p>
+      <div class="project-tags">
+        <span class="tag blue">Voltage</span>
+        <span class="tag">Resistors</span>
+        <span class="tag">Circuit Design</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.slideshare.net/slideshow/physics-guide-voltage-divider-nijat-mazanli-najabat-sophiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287278278" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <p class="project-num">06 — RESEARCH</p>
+      <h3 class="project-title">Azerbaijan Electronics Market</h3>
+      <p class="project-desc">
+        Market analysis of Azerbaijan's electronics industry — sales trends, component availability, pricing, and insights for students and engineers in the local market.
+      </p>
+      <div class="project-tags">
+        <span class="tag amber">Market Research</span>
+        <span class="tag">Azerbaijan</span>
+        <span class="tag">Economics</span>
+      </div>
+      <div class="project-links">
+        <a href="https://www.slideshare.net/slideshow/physics-guide-an-analysis-of-azerbaijan-s-electronics-market-focusing-on-sales-authors-necabet-sofiyeva-nicat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287388776" class="project-link" target="_blank">SlideShare</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <p class="section-tag">02 — TEAM</p>
+  <h2 class="section-title">The People<br>Behind the Work</h2>
+
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-initial">N</div>
+      <h3 class="team-name">Najabat Sophiyeva</h3>
+      <p class="team-role">CO-AUTHOR · iOS DEVELOPER · BAKU</p>
+      <p class="team-bio">
+        Third-year CS student and iOS developer in Baku. Brings product thinking, UI design sensibility, and deep curiosity about how things work — from transistors to mobile apps.
+      </p>
+      <div class="team-skills">
+        <span class="tag accent">iOS / Swift</span>
+        <span class="tag">SwiftUI</span>
+        <span class="tag">Physics</span>
+        <span class="tag">Electronics</span>
+        <span class="tag">Research</span>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <div class="team-initial" style="color: var(--accent2); border-color: rgba(96,200,240,0.3);">N</div>
+      <h3 class="team-name">Nijat Mazanli</h3>
+      <p class="team-role">CO-AUTHOR · ENGINEER · BAKU</p>
+      <p class="team-bio">
+        Co-author and primary publisher of the Physics Guide series. Passionate about making complex electronics topics visually accessible to Azerbaijani students and beyond.
+      </p>
+      <div class="team-skills">
+        <span class="tag blue">Electronics</span>
+        <span class="tag">Circuit Theory</span>
+        <span class="tag">Physics</span>
+        <span class="tag">Education</span>
+        <span class="tag">Design</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 2rem; padding: 1.5rem 2rem; border: 1px solid rgba(200,240,96,0.2); background: rgba(200,240,96,0.04); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+    <span class="verified">Verified by Physics Teacher</span>
+    <p style="font-size: 14px; color: var(--text2);">
+      All guides reviewed and certified by <strong style="color: var(--text);">Telman Askeraliyev</strong> — Fizika Müəllimi, Baku, Azerbaijan.
+    </p>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <p class="section-tag">03 — PUBLICATIONS</p>
+  <h2 class="section-title">Where to Find<br>Our Work</h2>
+
+  <div class="pub-list">
+    <a href="https://www.academia.edu/165906555" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Physics Guide: Field Effect Transistors (FET)</span>
+      <span class="pub-platform">Academia.edu ↗</span>
+    </a>
+    <a href="https://www.academia.edu/165709848" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Physics Guide: Amplifiers and Applications</span>
+      <span class="pub-platform">Academia.edu ↗</span>
+    </a>
+    <a href="https://www.slideshare.net/slideshow/technical-laboratory-report-transistor-report-nijat-mazanli-najabat-sofiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/286914601" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Technical Laboratory Report: Transistors</span>
+      <span class="pub-platform">SlideShare ↗</span>
+    </a>
+    <a href="https://www.slideshare.net/slideshow/capacitor-najabat-sofiyeva-and-nijat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/286799493" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Physics Guide: Capacitors</span>
+      <span class="pub-platform">SlideShare ↗</span>
+    </a>
+    <a href="https://www.slideshare.net/slideshow/physics-guide-voltage-divider-nijat-mazanli-najabat-sophiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287278278" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Physics Guide: Voltage Divider</span>
+      <span class="pub-platform">SlideShare ↗</span>
+    </a>
+    <a href="https://www.slideshare.net/slideshow/physics-guide-an-analysis-of-azerbaijan-s-electronics-market-focusing-on-sales-authors-necabet-sofiyeva-nicat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287388776" target="_blank" class="pub-item">
+      <span class="pub-year">2025</span>
+      <span class="pub-title">Analysis: Azerbaijan's Electronics Market</span>
+      <span class="pub-platform">SlideShare ↗</span>
+    </a>
+  </div>
+
+  <div style="margin-top: 2.5rem;">
+    <p style="font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); letter-spacing: 0.08em; margin-bottom: 1rem;">FIND US ON</p>
+    <div class="platform-row">
+      <a href="https://www.academia.edu" target="_blank" class="platform-badge">Academia.edu</a>
+      <a href="https://www.slideshare.net/nicatmazanli" target="_blank" class="platform-badge">SlideShare</a>
+      <a href="https://www.tinkercad.com" target="_blank" class="platform-badge">Tinkercad</a>
+      <a href="#" class="platform-badge">YouTube (Video)</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<footer>
+  <p>© 2025 Najabat Sophiyeva & Nijat Mazanli — Baku, Azerbaijan</p>
+  <p>Verified by Telman Askeraliyev · Fizika Müəllimi</p>
+</footer>
+
+</body>
+</html>
