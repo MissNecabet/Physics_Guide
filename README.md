@@ -275,10 +275,10 @@ All guides reviewed and certified by **Telman Askeraliyev** — Fizika Müəllim
 
 | Platform | Link |
 |----------|------|
-| Academia.edu | https://www.academia.edu |
+| Academia.edu | https://independent.academia.edu/NijatMazanl%C4%B1 // https://independent.academia.edu/Necabet_Sofiyeva |
 | SlideShare | https://www.slideshare.net/nicatmazanli |
 | Tinkercad | https://www.tinkercad.com |
-| YouTube | *(video series — coming soon)* |
+| YouTube | https://www.youtube.com/@nicatmazanli |
 
 ---
 
