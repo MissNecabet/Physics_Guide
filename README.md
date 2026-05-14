@@ -10,7 +10,7 @@
 ```
 
 ### Physics Guide Series — Electronics & Circuit Theory
-**Najabat Sophiyeva · Nijat Mazanli** — Baku, Azerbaijan · 2025
+**Najabat Sophiyeva · Nijat Mazanli** — Baku, Azerbaijan · 2026
 
 [![Verified](https://img.shields.io/badge/Verified%20by-Telman%20Askeraliyev-c8f060?style=flat-square&labelColor=0e0e1a)](https://www.linkedin.com/in/physics-teacher-azerbaijan-telman-askeraliyev/)
 [![Academia](https://img.shields.io/badge/Academia.edu-Published-60d4f0?style=flat-square&labelColor=0e0e1a)](https://www.academia.edu)
@@ -30,7 +30,7 @@
 | **Verified by** | Telman Askeraliyev — Fizika Müəllimi, Baku |
 | **LinkedIn** | https://www.linkedin.com/in/physics-teacher-azerbaijan-telman-askeraliyev/ |
 | **Instagram** | https://www.instagram.com/physics_teacher_azerbaijan |
-| **Year** | 2025 |
+| **Year** | 2026 |
 | **Type** | Visual Guides · Lab Reports · Market Research |
 | **Location** | Azerbaijan, Baku |
 
@@ -283,6 +283,6 @@ All guides reviewed and certified by **Telman Askeraliyev** — Fizika Müəllim
 
 <div align="center">
 
-*Physics Guide Series · 2025 · Baku, Azerbaijan*
+*Physics Guide Series · 2026 · Baku, Azerbaijan*
 
 </div>
