@@ -763,6 +763,11 @@ footer p{
         <div id="quiz-t7"></div>
         <div id="quiz-result-t7" style="display:none;margin-top:1rem;padding:.9rem 1.2rem;border:1px solid var(--lime-border);background:var(--lime-dim);font-family:'DM Mono',monospace;font-size:12px;color:var(--lime);"></div>
         <button onclick="checkQuiz()" style="margin-top:1rem;padding:.5rem 1.4rem;background:var(--lime);color:#07070d;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;border:none;cursor:pointer;display:none;" id="quiz-submit-t7">CHECK ANSWERS</button>
+
+        <!-- WHAT IF? SCENARIO CARDS -->
+        <p class="subtag" style="margin-top:2.2rem">What If? — Scenario Analysis</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:1.2rem;line-height:1.7">Each card explores what would happen if one component were removed or changed. Click to reveal the answer.</p>
+        <div id="whatif-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;"></div>
       </div>
     </div>
 
@@ -999,12 +1004,82 @@ function retakeQuiz() {
 </footer>
 
 <script>
-// FIX 3: toggle funksiyası — sadə class toggle, linklər ayrıca stopPropagation ilə qorunur
 function toggle(id) {
   document.getElementById(id).classList.toggle('open');
   if (id === 't7' && document.getElementById('t7').classList.contains('open')) {
     renderQuiz();
+    renderWhatIf();
   }
+}
+</script>
+
+<script>
+// ─── WHAT IF? SCENARIO CARDS ───
+const whatIfData = [
+  {
+    icon:'⚡',
+    q:'What if the 1N4148 flyback diode was removed?',
+    a:'Every time the relay turns OFF, the collapsing magnetic field generates a back-EMF spike — potentially exceeding 40V (the 2N2222\'s V_CE max). Without the diode, this spike fires directly through the transistor. Result: the transistor burns out after a few cycles, permanently.',
+    color:'rgba(240,96,96,0.08)',border:'rgba(240,96,96,0.3)',label:'COMPONENT REMOVED'
+  },
+  {
+    icon:'🔌',
+    q:'What if the 10kΩ pull-down resistor was removed?',
+    a:'The transistor base would float — picking up electromagnetic interference from nearby wires. The 2N2222 would switch ON randomly even when the sensor is flat. Result: the alarm triggers without any tilt — completely unreliable behaviour.',
+    color:'rgba(240,176,96,0.08)',border:'rgba(240,176,96,0.3)',label:'COMPONENT REMOVED'
+  },
+  {
+    icon:'🔁',
+    q:'What if a PNP transistor replaced the 2N2222 NPN?',
+    a:'A PNP transistor switches ON when the base is pulled LOW toward GND, not HIGH. With the same wiring, it would be permanently ON when the sensor is flat and turn OFF when tilted — the exact opposite logic. Alarm sounds at rest, goes silent when tilted.',
+    color:'rgba(103,232,249,0.07)',border:'rgba(103,232,249,0.3)',label:'COMPONENT SWAPPED'
+  },
+  {
+    icon:'📉',
+    q:'What if R_B changed from 1kΩ to 100kΩ?',
+    a:'I_B = (9 − 0.7) / 100,000 = 0.083 mA. Minimum required for saturation: 4.4 mA. With only 0.083 mA the transistor stays in the active region — V_CE remains high, the relay barely energises or chatters, and the transistor dissipates significant heat (P = V_CE × I_C).',
+    color:'rgba(167,139,250,0.08)',border:'rgba(167,139,250,0.3)',label:'VALUE CHANGED'
+  },
+  {
+    icon:'🔋',
+    q:'What if supply voltage dropped from 9V to 3.3V?',
+    a:'I_coil = 3.3 / 200 = 16.5 mA — far below the pull-in current needed for the LU-5-R. The magnetic field cannot pull the armature. The transistor would still saturate (I_B = 2.6 mA > 4.4 mA needed... wait — actually 2.6 mA < 4.4 mA at 3.3V). Double failure: transistor barely saturates AND relay won\'t activate.',
+    color:'rgba(200,240,96,0.07)',border:'rgba(200,240,96,0.25)',label:'VOLTAGE CHANGED'
+  },
+  {
+    icon:'🔀',
+    q:'What if the relay NO pin was wired to NC by mistake?',
+    a:'NC (Normally Closed) is connected when the relay is NOT energised — and opens when activated. The alarm would be permanently ON at rest, and turn OFF when the device tilts. Complete inversion of intended behaviour — a wiring logic error, not a component fault.',
+    color:'rgba(240,96,144,0.08)',border:'rgba(240,96,144,0.3)',label:'WIRING ERROR'
+  }
+];
+
+let whatIfRendered = false;
+function renderWhatIf() {
+  if (whatIfRendered) return;
+  whatIfRendered = true;
+  const container = document.getElementById('whatif-cards');
+  if (!container) return;
+  whatIfData.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = `border:1px solid ${card.border};background:${card.color};padding:1rem 1.2rem;cursor:pointer;transition:all .2s;`;
+    div.innerHTML = `
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:#4e4d60;margin-bottom:.4rem;">${card.label}</div>
+      <div style="font-size:1.4rem;margin-bottom:.4rem;">${card.icon}</div>
+      <p style="font-size:12px;color:#eeedf5;line-height:1.6;font-weight:500;margin-bottom:.6rem;">${card.q}</p>
+      <div id="wi-ans-${i}" style="display:none;font-size:12px;color:#9896c8;line-height:1.7;border-top:1px solid ${card.border};padding-top:.7rem;">${card.a}</div>
+      <div id="wi-tog-${i}" style="font-family:'DM Mono',monospace;font-size:10px;color:#4e4d60;margin-top:.4rem;letter-spacing:.06em;user-select:none;">▶ REVEAL ANSWER</div>
+    `;
+    div.addEventListener('click', () => {
+      const ans = document.getElementById(`wi-ans-${i}`);
+      const tog = document.getElementById(`wi-tog-${i}`);
+      const open = ans.style.display === 'block';
+      ans.style.display = open ? 'none' : 'block';
+      tog.textContent   = open ? '▶ REVEAL ANSWER' : '▼ HIDE ANSWER';
+      tog.style.color   = open ? '#4e4d60' : 'var(--lime)';
+    });
+    container.appendChild(div);
+  });
 }
 </script>
 </body>
