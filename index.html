@@ -678,12 +678,14 @@ footer p{
     <!-- TOPIC 7 -->
     <div class="topic" id="t7">
       <div class="topic-header" onclick="toggle('t7')">
-        <span class="topic-num">07</span>
+        <span class="topic-num">07 ⭐</span>
         <div class="topic-title-wrap">
-          <h3 class="topic-title">Tilt Sensor Circuit — Engineering Project</h3>
-          <p class="topic-desc">Real breadboard + TinkerCAD project — tilt-activated relay circuit with NPN transistor, flyback diode, buzzer and LED indicator.</p>
+          <h3 class="topic-title">Tilt Sensor Alarm System — Lab Report</h3>
+          <p class="topic-desc">SW-520 tilt sensor → 2N2222 NPN transistor → LU-5-R relay → buzzer + LED alarm. Built on real breadboard and TinkerCAD. Level 2.6 · May 2026.</p>
           <div class="topic-links" style="margin-top:.8rem">
-            <a href="https://www.tinkercad.com" target="_blank" class="tlink ac" onclick="event.stopPropagation()">TinkerCAD ↗</a>
+            <a href="https://www.academia.edu/167374803" target="_blank" class="tlink ac" onclick="event.stopPropagation()">Academia.edu ↗</a>
+            <a href="https://www.slideshare.net/slideshow/technical-laboratory-report-alarm-system-with-tilt-sensor-by-najabat-sofiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287595111" target="_blank" class="tlink" onclick="event.stopPropagation()">SlideShare ↗</a>
+            <a href="https://youtu.be/esIwqgL-f1E?si=KdTRGP6Y8rYLGAHC" target="_blank" class="tlink" onclick="event.stopPropagation()">▶ YouTube Demo ↗</a>
           </div>
         </div>
         <span class="topic-toggle">+</span>
@@ -692,43 +694,67 @@ footer p{
         <p class="subtag">Project Overview</p>
         <table class="data-table">
           <tr><th>#</th><th>Section</th><th>Content</th></tr>
-          <tr><td>01</td><td>Objective</td><td>Detect tilt angle and trigger an alarm circuit via relay switching</td></tr>
-          <tr><td>02</td><td>Circuit Design</td><td>NPN transistor (2N2222) as switch — base driven by tilt sensor output</td></tr>
-          <tr><td>03</td><td>Relay Control</td><td>HW-482 / LU-5-R relay switches 9V load — flyback diode (1N4148) protects transistor</td></tr>
-          <tr><td>04</td><td>Output Indicators</td><td>Buzzer + LED activate when tilt detected — SW200D switch for manual override</td></tr>
-          <tr><td>05</td><td>Implementation</td><td>Built and tested on real breadboard + verified in TinkerCAD simulation</td></tr>
+          <tr><td>01</td><td>Objective</td><td>SW-520 tilt sensor acts as digital trigger — when tilted past ~45°, activates relay alarm</td></tr>
+          <tr><td>02</td><td>Transistor Switch</td><td>2N2222 NPN — base driven via 1kΩ R_B; 10kΩ pull-down holds base at GND when sensor open</td></tr>
+          <tr><td>03</td><td>Relay Control</td><td>LU-5-R 9V relay (coil ~200Ω) — transistor saturation energises coil, pulls COM to NO</td></tr>
+          <tr><td>04</td><td>Protection</td><td>1N4148 flyback diode across relay coil — clamps back-EMF spike on de-energisation</td></tr>
+          <tr><td>05</td><td>Output</td><td>Red LED (470Ω limiting resistor) + active buzzer — both activate simultaneously on tilt</td></tr>
+          <tr><td>06</td><td>Implementation</td><td>Built and tested in TinkerCAD simulation + real breadboard. Video published on YouTube.</td></tr>
         </table>
         <p class="subtag">Components</p>
         <table class="data-table">
-          <tr><th>Component</th><th>Model</th><th>Role</th></tr>
-          <tr><td>Tilt Sensor</td><td>SW200D</td><td>Detects tilt — closes/opens circuit</td></tr>
-          <tr><td>NPN Transistor</td><td>2N2222</td><td>Amplifies tilt signal to drive relay coil</td></tr>
-          <tr><td>Relay</td><td>HW-482 / LU-5-R</td><td>Switches output load (buzzer + LED)</td></tr>
-          <tr><td>Flyback Diode</td><td>1N4148</td><td>Suppresses voltage spike from relay coil</td></tr>
-          <tr><td>Power Supply</td><td>9V Battery</td><td>Powers relay coil and output circuit</td></tr>
-          <tr><td>Output</td><td>Buzzer + LED</td><td>Visual + audio alarm on tilt detection</td></tr>
+          <tr><th>Component</th><th>Model / Value</th><th>Role in Circuit</th></tr>
+          <tr><td>Tilt Sensor</td><td>SW-520</td><td>Ball-type digital switch — closes at ≥45° tilt, opens when flat</td></tr>
+          <tr><td>Pull-down Resistor</td><td>10kΩ</td><td>Holds base at 0V when sensor open — prevents false trigger from floating pin</td></tr>
+          <tr><td>Base Resistor</td><td>1kΩ</td><td>Limits I_B into 2N2222; ensures safe saturation without overdrive</td></tr>
+          <tr><td>NPN Transistor</td><td>2N2222</td><td>Electronic switch — I_C max 600mA, hFE 100–300; saturates to drive relay coil</td></tr>
+          <tr><td>Flyback Diode</td><td>1N4148</td><td>Reverse-biased across relay coil — dissipates back-EMF spike on turn-off</td></tr>
+          <tr><td>Relay</td><td>LU-5-R (9V)</td><td>Electromechanical switch — coil R ≈ 200Ω; NO+COM connect load when energised</td></tr>
+          <tr><td>LED Resistor</td><td>470Ω</td><td>Limits LED current to ~14.9mA — within safe 10–20mA range</td></tr>
+          <tr><td>LED</td><td>5mm Red</td><td>Visual indicator — V_F ≈ 2.0V, I_F max 30mA</td></tr>
+          <tr><td>Buzzer</td><td>Active 9V</td><td>Internal oscillator — sounds on DC power, no external frequency needed</td></tr>
+          <tr><td>Power Supply</td><td>9V Battery</td><td>Powers entire circuit — relay coil, buzzer, LED</td></tr>
         </table>
-        <p class="subtag">Key Formulas</p>
+        <p class="subtag">Key Calculations</p>
         <table class="data-table">
-          <tr><th>Formula</th><th>Description</th></tr>
-          <tr><td><code>I_C = β × I_B</code></td><td>Collector current — 2N2222 drives relay coil</td></tr>
-          <tr><td><code>V_CE(sat) ≈ 0.2V</code></td><td>Transistor in saturation — relay fully ON</td></tr>
-          <tr><td><code>V_spike = L × dI/dt</code></td><td>Inductive spike — suppressed by 1N4148 diode</td></tr>
-          <tr><td><code>R_B = (V_in − V_BE) / I_B</code></td><td>Base resistor to set correct I_B for saturation</td></tr>
+          <tr><th>Calculation</th><th>Formula</th><th>Result</th></tr>
+          <tr><td>Relay coil current (I_C)</td><td><code>I_C = (V_supply − V_CE(sat)) / R_coil</code></td><td>(9 − 0.2) / 200 ≈ 44 mA</td></tr>
+          <tr><td>Min base current for saturation</td><td><code>I_B(min) = I_C / hFE × 10</code></td><td>44/100 × 10 = 4.4 mA required</td></tr>
+          <tr><td>Actual base current</td><td><code>I_B = (V_supply − V_BE) / R_B</code></td><td>(9 − 0.7) / 1000 = 8.3 mA ✓</td></tr>
+          <tr><td>LED current</td><td><code>I_LED = (V_supply − V_F) / R_LED</code></td><td>(9 − 2.0) / 470 ≈ 14.9 mA ✓</td></tr>
         </table>
         <p class="subtag">Circuit Logic</p>
         <table class="data-table">
-          <tr><th>State</th><th>Tilt Sensor</th><th>Transistor</th><th>Relay</th><th>Output</th></tr>
-          <tr><td>Normal</td><td>Open</td><td>OFF (cutoff)</td><td>De-energised</td><td>Buzzer + LED OFF</td></tr>
-          <tr><td>Tilted</td><td>Closed</td><td>ON (saturation)</td><td>Energised</td><td>Buzzer + LED ON</td></tr>
+          <tr><th>State</th><th>Sensor</th><th>Transistor</th><th>Relay</th><th>Output</th></tr>
+          <tr><td>Flat</td><td>Open</td><td>Cutoff — I_B = 0</td><td>De-energised</td><td>Buzzer OFF · LED OFF</td></tr>
+          <tr><td>Tilted ≥45°</td><td>Closed</td><td>Saturation — I_B = 8.3mA</td><td>Energised</td><td>Buzzer ON · LED ON ✓</td></tr>
+        </table>
+        <p class="subtag">Component Specs</p>
+        <table class="data-table">
+          <tr><th>Component</th><th>Parameter</th><th>Value</th></tr>
+          <tr><td>SW-520</td><td>Operating voltage / tilt angle</td><td>3–12V DC / ≈45°</td></tr>
+          <tr><td>2N2222</td><td>I_C max / V_CE max / hFE</td><td>600mA / 40V / 100–300</td></tr>
+          <tr><td>LU-5-R</td><td>Coil voltage / resistance / contact rating</td><td>9V / ~200Ω / 3A 24V DC</td></tr>
+          <tr><td>1N4148</td><td>V_F / reverse breakdown / switching speed</td><td>0.7V / 100V / &lt;4ns</td></tr>
+        </table>
+        <p class="subtag">Build Status</p>
+        <table class="data-table">
+          <tr><th>Platform</th><th>Status</th></tr>
+          <tr><td>TinkerCAD Simulation</td><td>✅ Built & tested</td></tr>
+          <tr><td>Real Breadboard</td><td>✅ Built & tested</td></tr>
+          <tr><td>YouTube Video Demo</td><td>✅ Published</td></tr>
+          <tr><td>Academia.edu Report</td><td>✅ Published</td></tr>
+          <tr><td>SlideShare Presentation</td><td>✅ Published</td></tr>
         </table>
         <div class="tags">
-          <span class="tag l">Tilt Sensor</span>
-          <span class="tag l">NPN Transistor</span>
-          <span class="tag c">Relay Circuit</span>
+          <span class="tag l">SW-520 Tilt Sensor</span>
+          <span class="tag l">2N2222 NPN</span>
+          <span class="tag c">LU-5-R Relay</span>
+          <span class="tag c">1N4148 Flyback</span>
           <span class="tag">TinkerCAD</span>
           <span class="tag">Breadboard</span>
-          <span class="tag a">2N2222</span>
+          <span class="tag a">Level 2.6</span>
+          <span class="tag a">May 2026</span>
         </div>
       </div>
     </div>
@@ -774,6 +800,7 @@ footer p{
     <a href="https://www.slideshare.net/slideshow/capacitor-najabat-sofiyeva-and-nijat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/286799493" target="_blank" class="pub-item"><span class="pub-yr">2025</span><span class="pub-t">Physics Guide: Capacitors</span><span class="pub-pl">SlideShare ↗</span></a>
     <a href="https://www.slideshare.net/slideshow/physics-guide-voltage-divider-nijat-mazanli-najabat-sophiyeva-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287278278" target="_blank" class="pub-item"><span class="pub-yr">2025</span><span class="pub-t">Physics Guide: Voltage Divider</span><span class="pub-pl">SlideShare ↗</span></a>
     <a href="https://www.slideshare.net/slideshow/physics-guide-an-analysis-of-azerbaijan-s-electronics-market-focusing-on-sales-authors-necabet-sofiyeva-nicat-mazanli-verified-by-physics-teacher-azerbaijan-telman-askeraliyev-fizika-muellimi-azerbaijan-baku/287388776" target="_blank" class="pub-item"><span class="pub-yr">2025</span><span class="pub-t">Analysis: Azerbaijan's Electronics Market</span><span class="pub-pl">SlideShare ↗</span></a>
+    <a href="https://www.academia.edu/167374803" target="_blank" class="pub-item"><span class="pub-yr">2026</span><span class="pub-t">Technical Lab Report: Tilt Sensor Alarm System ⭐</span><span class="pub-pl">Academia.edu ↗</span></a>
   </div>
   <div style="margin-top:2.5rem">
     <p class="sec-tag" style="margin-bottom:.8rem">Find us on</p>
