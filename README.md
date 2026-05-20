@@ -21,7 +21,7 @@
 [![Academia](https://img.shields.io/badge/Academia.edu-Published-60d4f0?style=flat-square&labelColor=0e0e1a)](https://www.academia.edu/NajabatSophiyeva)
 [![SlideShare](https://img.shields.io/badge/SlideShare-Published-f0b060?style=flat-square&labelColor=0e0e1a)](https://www.slideshare.net/najabatsophiyeva)
 [![YouTube](https://img.shields.io/badge/YouTube-Demo%20Video-f06060?style=flat-square&labelColor=0e0e1a)](https://youtu.be/esIwqgL-f1E?si=KdTRGP6Y8rYLGAHC)
-[![Tinkercad](https://img.shields.io/badge/Tinkercad-Simulations-e060c0?style=flat-square&labelColor=0e0e1a)](https://www.tinkercad.com)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Site-4c9be8?style=flat-square&labelColor=0e0e1a)](https://missnecabet.github.io/Physics_Guide/)
 
 > Visual guides, lab reports, and engineering projects on electronics —
 > created by Najabat Sophiyeva, verified by Physics Teacher Telman Askeraliyev · Baku, Azerbaijan.
