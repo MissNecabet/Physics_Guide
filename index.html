@@ -756,11 +756,173 @@ footer p{
           <span class="tag a">Level 2.6</span>
           <span class="tag a">May 2026</span>
         </div>
+
+        <!-- TROUBLESHOOTING QUIZ -->
+        <p class="subtag" style="margin-top:1.8rem">Troubleshooting Quiz</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.7">Each scenario describes a real fault in this circuit. Select the most likely cause — based on your understanding of how the circuit works.</p>
+        <div id="quiz-t7"></div>
+        <div id="quiz-result-t7" style="display:none;margin-top:1rem;padding:.9rem 1.2rem;border:1px solid var(--lime-border);background:var(--lime-dim);font-family:'DM Mono',monospace;font-size:12px;color:var(--lime);"></div>
+        <button onclick="checkQuiz()" style="margin-top:1rem;padding:.5rem 1.4rem;background:var(--lime);color:#07070d;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.06em;border:none;cursor:pointer;display:none;" id="quiz-submit-t7">CHECK ANSWERS</button>
       </div>
     </div>
 
   </div>
 </section>
+
+<script>
+// ─── TROUBLESHOOTING QUIZ ───
+const quizData = [
+  {
+    q: "The buzzer and LED are always ON — even when the sensor is flat and not tilted.",
+    options: [
+      "The 1N4148 flyback diode is installed backwards",
+      "The 10kΩ pull-down resistor is missing or not connected to GND",
+      "The relay coil resistance is too high",
+      "The LED resistor value is too small"
+    ],
+    correct: 1,
+    explain: "Without the 10kΩ pull-down, the transistor base floats — any noise keeps it ON. The pull-down holds the base firmly at 0V when the sensor is open."
+  },
+  {
+    q: "The circuit never triggers — buzzer and LED stay OFF in every tilt position.",
+    options: [
+      "The flyback diode is shorted",
+      "The relay NO and NC contacts are swapped (load wired to NC)",
+      "The 9V battery is too strong",
+      "The LED is installed backwards"
+    ],
+    correct: 1,
+    explain: "If the load is wired to NC (Normally Closed) instead of NO (Normally Open), the relay does the opposite — it disconnects when energised. Move the wire to the NO pin."
+  },
+  {
+    q: "The transistor gets very hot within seconds of the circuit being tilted.",
+    options: [
+      "The base current is too low — transistor not reaching saturation",
+      "The flyback diode is missing — back-EMF is heating the transistor",
+      "The buzzer draws too much current from the relay",
+      "The pull-down resistor is the wrong value"
+    ],
+    correct: 0,
+    explain: "If I_B is insufficient to saturate the 2N2222, V_CE stays high and the transistor dissipates power as heat (P = V_CE × I_C). Saturation requires I_B ≥ I_C / hFE — here 8.3mA >> 4.4mA required."
+  },
+  {
+    q: "The transistor burns out after a few ON/OFF cycles even though it works initially.",
+    options: [
+      "The base resistor (1kΩ) is too large",
+      "The flyback diode (1N4148) is missing or installed in reverse",
+      "The relay coil voltage is too low",
+      "The tilt sensor is the wrong model"
+    ],
+    correct: 1,
+    explain: "Every time the relay de-energises, the collapsing magnetic field generates a back-EMF spike that can exceed V_CE max (40V) of the 2N2222. The 1N4148 must be reverse-biased across the coil — cathode (banded end) to the 9V side."
+  },
+  {
+    q: "The alarm triggers inconsistently — flickering at a certain angle instead of switching cleanly.",
+    options: [
+      "The LED resistor value is incorrect",
+      "The relay contact rating is too low",
+      "The tilt sensor is vibrating at the marginal threshold angle — base signal bouncing",
+      "The flyback diode is slowing down the relay response"
+    ],
+    correct: 2,
+    explain: "At exactly the threshold angle (~45°), the ball inside SW-520 bounces between contacts — causing rapid open/close cycles (chattering). A 100nF capacitor from base to GND adds debounce delay, smoothing the signal."
+  }
+];
+
+let quizRendered = false;
+
+function renderQuiz() {
+  if (quizRendered) return;
+  quizRendered = true;
+  const container = document.getElementById('quiz-t7');
+  quizData.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:1.2rem;padding:1rem 1.2rem;border:1px solid rgba(255,255,255,0.07);background:#0e0e1a;';
+    div.innerHTML = `
+      <p style="font-size:13px;color:#eeedf5;line-height:1.7;margin-bottom:.8rem">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:#4e4d60;letter-spacing:.1em">Q${i+1} &nbsp;</span>
+        ${q.q}
+      </p>
+      ${q.options.map((opt, j) => `
+        <label id="opt-${i}-${j}" style="display:flex;align-items:flex-start;gap:.7rem;padding:.5rem .7rem;margin-bottom:.3rem;cursor:pointer;border:1px solid transparent;transition:border-color .15s;font-size:13px;color:#7e7d90;line-height:1.5;">
+          <input type="radio" name="q${i}" value="${j}" style="margin-top:.2rem;accent-color:var(--lime);flex-shrink:0;" onchange="highlightSelected(${i},${j})">
+          <span>${opt}</span>
+        </label>
+      `).join('')}
+      <div id="feedback-${i}" style="display:none;margin-top:.6rem;padding:.6rem .9rem;font-size:12px;font-family:'DM Mono',monospace;line-height:1.6;border-left:2px solid var(--lime);background:rgba(200,240,96,0.06);color:#9896c8;"></div>
+    `;
+    container.appendChild(div);
+  });
+  document.getElementById('quiz-submit-t7').style.display = 'inline-block';
+}
+
+function highlightSelected(qIdx, optIdx) {
+  quizData[qIdx].options.forEach((_, j) => {
+    const lbl = document.getElementById(`opt-${qIdx}-${j}`);
+    lbl.style.borderColor = j === optIdx ? 'rgba(200,240,96,0.3)' : 'transparent';
+    lbl.style.background  = j === optIdx ? 'rgba(200,240,96,0.05)' : 'transparent';
+    lbl.style.color       = j === optIdx ? '#eeedf5' : '#7e7d90';
+  });
+}
+
+function checkQuiz() {
+  let score = 0;
+  quizData.forEach((q, i) => {
+    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+    const fb  = document.getElementById(`feedback-${i}`);
+    fb.style.display = 'block';
+    if (sel && parseInt(sel.value) === q.correct) {
+      score++;
+      fb.style.borderColor = 'var(--lime)';
+      fb.style.background  = 'rgba(200,240,96,0.07)';
+      fb.style.color       = '#c8f060';
+      fb.innerHTML = `✓ Correct. ${q.explain}`;
+      document.getElementById(`opt-${i}-${q.correct}`).style.borderColor = 'var(--lime)';
+      document.getElementById(`opt-${i}-${q.correct}`).style.background  = 'rgba(200,240,96,0.08)';
+    } else {
+      fb.style.borderColor = 'rgba(240,176,96,0.4)';
+      fb.style.background  = 'rgba(240,176,96,0.06)';
+      fb.style.color       = '#f0b060';
+      const correctText = q.options[q.correct];
+      fb.innerHTML = `✗ ${sel ? 'Incorrect.' : 'No answer.'} Correct: <span style="color:#eeedf5">${correctText}</span><br>${q.explain}`;
+      if (sel) {
+        document.getElementById(`opt-${i}-${parseInt(sel.value)}`).style.borderColor = 'rgba(240,96,96,0.4)';
+        document.getElementById(`opt-${i}-${parseInt(sel.value)}`).style.background  = 'rgba(240,96,96,0.05)';
+      }
+      document.getElementById(`opt-${i}-${q.correct}`).style.borderColor = 'rgba(200,240,96,0.4)';
+    }
+  });
+  const res = document.getElementById('quiz-result-t7');
+  res.style.display = 'block';
+  const pct = Math.round(score / quizData.length * 100);
+  const msg = pct === 100 ? 'Perfect — complete mastery of fault analysis.' :
+              pct >= 80  ? 'Strong understanding. Review the missed scenario above.' :
+              pct >= 60  ? 'Good foundation. Re-read the circuit logic section.' :
+                           'Keep studying — focus on pull-down, flyback, and saturation.';
+  res.innerHTML = `Score: ${score} / ${quizData.length} &nbsp;(${pct}%) &nbsp;—&nbsp; ${msg}`;
+  document.getElementById('quiz-submit-t7').textContent = 'RETAKE';
+  document.getElementById('quiz-submit-t7').onclick = retakeQuiz;
+}
+
+function retakeQuiz() {
+  quizData.forEach((_, i) => {
+    document.querySelector(`input[name="q${i}"]:checked`) &&
+      (document.querySelector(`input[name="q${i}"]:checked`).checked = false);
+    document.getElementById(`feedback-${i}`).style.display = 'none';
+    quizData[i].options.forEach((_, j) => {
+      const lbl = document.getElementById(`opt-${i}-${j}`);
+      lbl.style.borderColor = 'transparent';
+      lbl.style.background  = 'transparent';
+      lbl.style.color       = '#7e7d90';
+    });
+  });
+  document.getElementById('quiz-result-t7').style.display = 'none';
+  document.getElementById('quiz-submit-t7').textContent = 'CHECK ANSWERS';
+  document.getElementById('quiz-submit-t7').onclick = checkQuiz;
+}
+
+// Accordion açılanda quiz-i render et — birbaşa toggle-ın içindən çağrılır
+</script>
 
 <!-- TEAM -->
 <section id="team" style="padding-top:0">
@@ -840,6 +1002,9 @@ footer p{
 // FIX 3: toggle funksiyası — sadə class toggle, linklər ayrıca stopPropagation ilə qorunur
 function toggle(id) {
   document.getElementById(id).classList.toggle('open');
+  if (id === 't7' && document.getElementById('t7').classList.contains('open')) {
+    renderQuiz();
+  }
 }
 </script>
 </body>
